@@ -62,7 +62,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 				</thead>
 				<tfoot>
 					<tr>
-						<td>Tuition and Feed Total Per Credit Hour</td>
+						<td>Tuition and Fee Total Per Credit Hour</td>
 						<td><?php echo money_format( '$%.2n', $resident_total ); ?></td>
 						<td><?php echo money_format( '$%.2n', $non_resident_total ); ?></td>
 					</tr>
