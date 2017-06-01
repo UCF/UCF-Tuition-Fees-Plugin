@@ -7,7 +7,10 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
         public static
             $option_prefix   = 'ucf_tuition_fees_',
             $option_defaults = array(
-                'base_feed_url' => 'http://www.studentaccounts.ucf.edu/feed/feed.cfm'
+                'base_feed_url'        => 'http://www.studentaccounts.ucf.edu/feed/feed.cfm',
+				'include_css'          => false,
+				'cache_results'        => false,
+				'transient_expiration' => 3 // hours
             );
 
         /**
@@ -21,6 +24,9 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
             $defaults = self::$option_defaults;
 
             add_option( self::$option_prefix . 'base_feed_url', $defaults['base_feed_url'] );
+			add_option( self::$option_prefix . 'include_css', $defaults['include_css'] );
+			add_option( self::$option_prefix . 'cache_results', $defaults['cache_results'] );
+			add_option( self::$option_prefix . 'transient_expiration', $defaults['transient_expiration'] );
         }
 
         /**
@@ -31,6 +37,9 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		 **/
 		public static function delete_options() {
 			delete_option( self::$option_prefix . 'base_feed_url' );
+			delete_option( self::$option_prefix . 'include_css' );
+			delete_option( self::$option_prefix . 'cache_results' );
+			delete_option( self::$option_prefix . 'transient_expiration' );
 		}
 
         /**
@@ -45,7 +54,10 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		public static function get_option_defaults() {
 			$defaults = self::$option_defaults;
 			$configurable_defaults = array(
-				'base_feed_url' => get_option( self::$option_prefix . 'base_feed_url' )
+				'base_feed_url'          => get_option( self::$option_prefix . 'base_feed_url' ),
+				'include_css'            => get_option( self::$option_prefix . 'include_css' ),
+				'cache_results'          => get_option( self::$option_prefix . 'cache_results' ),
+				'transient_expiration'   => get_option( self::$option_prefix . 'transient_expiration' )
 			);
 			$configurable_defaults = self::format_options( $configurable_defaults );
 			$default = array_merge( $defaults, $configurable_defaults );
@@ -87,6 +99,20 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		 * @return array
 		 **/
 		public static function format_options( $list ) {
+			foreach( $list as $key => $val ) {
+				switch( $key ) {
+					case 'include_css':
+					case 'cache_results':
+						$list[$key] = filter_var( $val, FILTER_VALIDATE_BOOLEAN );
+						break;
+					case 'transient_expiration':
+						$list[$key] = floatval( $val );
+						break;
+					default:
+						break;
+				}
+			}
+
 			return $list;
 		}
 
@@ -118,16 +144,17 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		 **/
 		public static function settings_init() {
 			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'base_feed_url' );
+			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'include_css' );
+			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'cache_results' );
+			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'transient_expiration' );
+
 			add_settings_section(
 				'ucf_tuition_fees_general',
 				'General Settings',
 				'',
 				'ucf_tuition_fees'
 			);
-			$post_type_args = array(
-				'public'   => true,
-				'_builtin' => true
-			);
+
 			add_settings_field(
 				self::$option_prefix . 'base_feed_url',
 				'Enabled Post Types',
@@ -137,6 +164,45 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 				array(
 					'label_for'   => self::$option_prefix . 'base_feed_url',
 					'description' => 'The base url of the tuition and fees feed.',
+					'type'        => 'text'
+				)
+			);
+
+			add_settings_field(
+				self::$option_prefix . 'include_css',
+				'Include Default CSS',
+				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
+				'ucf_tuition_fees',
+				'ucf_tuition_fees_general',
+				array(
+					'label_for'   => self::$option_prefix . 'include_css',
+					'description' => 'If checked, the default css file will be added to all pages.',
+					'type'        => 'checkbox'
+				)
+			);
+
+			add_settings_field(
+				self::$option_prefix . 'cache_results',
+				'Cache Feed Results',
+				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
+				'ucf_tuition_fees',
+				'ucf_tuition_fees_general',
+				array(
+					'label_for'   => self::$option_prefix . 'cache_results',
+					'description' => 'If checked, the results from the tuition and fees feed will be cached as a transient.',
+					'type'        => 'checkbox'
+				)
+			);
+
+			add_settings_field(
+				self::$option_prefix . 'transient_expiration',
+				'Transient Timeout',
+				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
+				'ucf_tuition_fees',
+				'ucf_tuition_fees_general',
+				array(
+					'label_for'   => self::$option_prefix . 'transient_expiration',
+					'description' => 'The number of hours the result transients should be cached for.',
 					'type'        => 'text'
 				)
 			);
@@ -247,6 +313,18 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		</div>
 		<?php
 			echo ob_get_clean();
+		}
+
+		/**
+		 * Enqueues admin assets on appropriate pages
+		 * @author Jim Barnes
+		 * @since 1.0.0
+		 * @param $hook string | The current admin hook
+		 **/
+		public static function enqueue_admin_assets( $hook ) {
+			if ( 'settings_page_ucf_tuition_fees' === $hook ) {
+				wp_enqueue_script( 'ucf-tf-admin-js', TUITION_FEES__JS_URL . '/ucf-tf-admin.min.js', array( 'jquery' ), null, true );
+			}
 		}
     }
 }
