@@ -52,7 +52,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 				$resident_total += $item->MaxResidentFee;
 				$non_resident_total += $item->MaxNonResidentFee;
 			}
-			setlocale( 'en_US' );
+			setlocale( LC_MONETARY, 'en_US' );
 			ob_start();
 		?>
 			<table class="table tuition-fees-table">
@@ -69,8 +69,8 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 				<tfoot>
 					<tr>
 						<td>Tuition and Fee Total Per Credit Hour</td>
-						<td><?php echo money_format( '$%.2n', $resident_total ); ?></td>
-						<td><?php echo money_format( '$%.2n', $non_resident_total ); ?></td>
+						<td><?php echo money_format( '%.2n', $resident_total ); ?></td>
+						<td><?php echo money_format( '%.2n', $non_resident_total ); ?></td>
 					</tr>
 				</tfoot>
 				<tbody>
@@ -78,7 +78,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 					<tr>
 						<td><?php echo $item['name']; ?></td>
 						<td><?php echo $item['res']; ?></td>
-						<td><?php echo $item['nonres'] ?></td>
+						<td><?php echo $item['nonres']; ?></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
