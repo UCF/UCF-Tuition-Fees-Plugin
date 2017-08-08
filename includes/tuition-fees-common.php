@@ -4,27 +4,33 @@
  **/
 if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 	class UCF_Tuition_Fees_Common {
-		
+
 		/**
 		 * Primary function for displaying tuition and fees
 		 * @author Jim Barnes
 		 * @since 1.0.0
 		 * @param $items Array | The array of tuition and fee items
+		 * @param $layout String | The name of the layout to use when displaying tuition data
+		 * @param $args Array | Extra arguments to pass to the layout
 		 **/
-		public static function display( $items, $title, $layout='default', $args=array() ) {
-			if ( has_action( 'ucf_tuition_fees_display_' . $layout ) ) {
-				do_action( 'ucf_tuition_fees_display_' . $layout, $items, $title, $args );
+		public static function display( $items, $layout='default', $args=array() ) {
+			// Main content/loop
+			$layout_content = self::display_default( '', $items, $args );
+			if ( has_filter( 'ucf_tuition_fees_display_' . $layout ) ) {
+				$layout_content = apply_filters( 'ucf_tuition_fees_display_' . $layout, $layout_content, $items, $args );
 			}
+			echo $layout_content;
 		}
 
 		/**
 		 * Default layout
 		 * @author Jim Barnes
 		 * @since 1.0.0
+		 * @param $content String | Existing content HTML
 		 * @param $items Array | The array of tuition items
-		 * @param $title string | The title to display
+		 * @param $args Array | Extra arguments for the layout
 		 **/
-		public static function display_default( $items, $title, $args ) {
+		public static function display_default( $content, $items, $args ) {
 			if ( ! is_array( $items ) ) { $items = array(); }
 			$resident_total = 0;
 			$non_resident_total = 0;
@@ -50,8 +56,8 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 			ob_start();
 		?>
 			<table class="table tuition-fees-table">
-			<?php if ( $title ) : ?>
-				<caption><?php echo $title; ?></caption>
+			<?php if ( $args['title'] ) : ?>
+				<caption><?php echo $args['title']; ?></caption>
 			<?php endif; ?>
 				<thead>
 					<tr>
@@ -78,7 +84,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 				</tbody>
 			</table>
 		<?php
-			echo ob_get_clean();
+			return ob_get_clean();
 		}
 	}
 }
