@@ -14,12 +14,16 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 		 * @param $args Array | Extra arguments to pass to the layout
 		 **/
 		public static function display( $items, $layout='default', $args=array() ) {
+			ob_start();
+
 			// Main content/loop
 			$layout_content = self::display_default( '', $items, $args );
 			if ( has_filter( 'ucf_tuition_fees_display_' . $layout ) ) {
 				$layout_content = apply_filters( 'ucf_tuition_fees_display_' . $layout, $layout_content, $items, $args );
 			}
 			echo $layout_content;
+
+			return ob_get_clean();
 		}
 
 		/**
