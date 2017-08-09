@@ -21,6 +21,15 @@ Provides a shortcode and related feed code for pulling UCF tuition and fees.
 
 ## Changelog ##
 
+### 2.0.0 ###
+Enhancements:
+- Updated main 'display' hook to a filter instead of an action, and consolidated the arguments passed to it into an array (`$args`)
+- Updated `UCF_Tuition_Fees_Common::display()` to return its value
+
+Bugfixes:
+- Added missing first 'category' arg in `setlocale()`
+- Fixed duplicate dollar signs in some monetary values
+
 ### 1.0.0 ###
 * Initial release
 
