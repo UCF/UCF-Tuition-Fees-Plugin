@@ -21,6 +21,9 @@ Provides a shortcode and related feed code for pulling UCF tuition and fees.
 
 ## Changelog ##
 
+### 2.0.1 ###
+Changes listed for v2.0.0 were not committed properly to master--v2.0.1 fixes this.
+
 ### 2.0.0 ###
 Enhancements:
 - Updated main 'display' hook to a filter instead of an action, and consolidated the arguments passed to it into an array (`$args`)
