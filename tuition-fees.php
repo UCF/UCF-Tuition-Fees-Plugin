@@ -28,5 +28,3 @@ add_action( 'admin_menu', array( 'UCF_Tuition_Fees_Config', 'add_options_page' )
 add_action( 'admin_enqueue_scripts', array( 'UCF_Tuition_Fees_Config', 'enqueue_admin_assets' ), 10, 1 );
 // Add the shortcode
 add_action( 'init', array( 'UCF_Tuition_Fees_Shortcode', 'register_shortcode' ) );
-// Add the default layout
-add_action( 'ucf_tuition_fees_display_default', array( 'UCF_Tuition_Fees_Common', 'display_default' ), 10, 2 );
