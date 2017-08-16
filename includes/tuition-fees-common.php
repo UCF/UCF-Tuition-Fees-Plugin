@@ -12,7 +12,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 		 * @param $items Array | The array of tuition and fee items
 		 **/
 		public static function display( $items, $title, $layout='default', $args=array() ) {
-			$content = display_default( $items, $title, $args );
+			$content = self::display_default( $items, $title, $args );
 
 			if ( has_filter( 'ucf_tuition_fees_display_' . $layout ) ) {
 				$content = apply_filters( 'ucf_tuition_fees_display_' . $layout, $content, $items, $title, $args );
