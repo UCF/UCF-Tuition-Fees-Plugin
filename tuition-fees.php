@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: UCF Tuition and Fees Plugin
-Version: 2.0.0
+Version: 2.0.1
 Author: UCF Web Communications
 Description: Provides a shortcode for displaying tuition and fees
 */
