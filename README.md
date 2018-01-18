@@ -21,6 +21,11 @@ Provides a shortcode and related feed code for pulling UCF tuition and fees.
 
 ## Changelog ##
 
+### 2.0.2 ###
+Enhancements:
+- Added importer from the [Main-Site-Utilities-Plugin](https://github.com/UCF/Main-Site-Utilities-Plugin) to this plugin.
+- Added option to override post_type as an assoc_arg: `wp tuition import https://url-to-data.edu --post-type=<post_type>`.
+
 ### 2.0.1 ###
 Changes listed for v2.0.0 were not committed properly to master--v2.0.1 fixes this.
 
