@@ -90,5 +90,17 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Common' ) ) {
 		<?php
 			return ob_get_clean();
 		}
+
+		/**
+		 * Default format for fee string
+		 * @author Jim Barnes
+		 * @since 2.0.2
+		 * @param int $amount The amount of the fee
+		 * @param string $per_unit The string representation of the 'per unit', i.e. 'per credit hour'
+		 * @return string The formatted string
+		 */
+		public static function default_fee_format( $amount, $per_unit ) {
+			return '$'. number_format( $amount, 2 ). $per_unit;
+		}
 	}
 }

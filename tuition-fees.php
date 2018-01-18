@@ -30,3 +30,13 @@ add_action( 'admin_enqueue_scripts', array( 'UCF_Tuition_Fees_Config', 'enqueue_
 add_action( 'init', array( 'UCF_Tuition_Fees_Shortcode', 'register_shortcode' ) );
 // Add the default layout
 add_action( 'ucf_tuition_fees_display_default', array( 'UCF_Tuition_Fees_Common', 'display_default' ), 10, 3 );
+// Add the default money format filter
+add_filter( 'ucf_tuition_fees_format_fee', array( 'UCF_Tuition_Fees_Common', 'default_fee_format' ), 9, 2 );
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once 'importers/tuition-fees-importer.php';
+	require_once 'includes/importers.php';
+
+	WP_CLI::add_command( 'tuition', 'TuitionCommand' );
+
+}
