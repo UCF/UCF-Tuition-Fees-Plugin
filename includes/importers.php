@@ -2,7 +2,7 @@
 /**
  * Commands for importing and updating tuition and fee data
  */
-class TuitionCommand extends WP_CLI_Command {
+class Tuition_Command extends WP_CLI_Command {
 	/**
 	 * Imports tuition and fee data
 	 *
