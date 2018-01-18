@@ -37,6 +37,6 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once 'importers/tuition-fees-importer.php';
 	require_once 'includes/importers.php';
 
-	WP_CLI::add_command( 'tuition', 'TuitionCommand' );
+	WP_CLI::add_command( 'tuition', 'Tuition_Command' );
 
 }
