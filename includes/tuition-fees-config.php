@@ -13,6 +13,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 				'include_css'              => false,
 				'cache_results'            => false,
 				'transient_expiration'     => 3 // hours
+				// TODO add is_online name option (default 'degree_online')
             );
 
         /**

@@ -236,11 +236,12 @@ Success %  : {$success_percentage}%
 			$program_type = ( is_array( $program_type ) && ! empty( $program_type ) ) ? $program_type[0] : null;
 			$plan_code    = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_plan_code_name' ), true );
 			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
+			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_is_online_name' ), true ), FILTER_VALIDATE_BOOLEAN );
 
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
 
-			$schedule_code = $this->get_schedule_code( $program_type->name, $plan_code, $subplan_code );
+			$schedule_code = $this->get_schedule_code( $program_type->name, $plan_code, $subplan_code, $is_online );
 
 			// If we can't determine the program code, skip it
 			if ( ! $schedule_code ) { $this->skipped_total++; continue; }
@@ -261,14 +262,10 @@ Success %  : {$success_percentage}%
 		}
 	}
 
-	private function get_schedule_code( $program_type, $plan_code, $subplan_code ) {
-		if ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
-			return 'UnderGrad';
-		}
-
+	private function get_schedule_code( $program_type, $plan_code, $subplan_code, $is_online ) {
 		// Loop through the mapping variable and look for a match
-		// This should handle exceptions for masters degrees
-		foreach( $this->mapping as $sched_code => $plan_codes ) {
+		// This should handle unique exceptions for graduate programs
+		foreach ( $this->mapping as $sched_code => $plan_codes ) {
 			if (
 				$plan_codes['plan_code'] === $plan_code
 				&& $plan_codes['subplan_code'] === $subplan_code
@@ -278,12 +275,27 @@ Success %  : {$success_percentage}%
 			}
 		}
 
-		// If we don't have a mapping for it, skip it.
-		if ( in_array( $program_type, array( 'Undergraduate Certificate', 'Graduate Certificate', 'Specialist', 'Professional Program' ) ) ) {
-			return null;
+		// Handle exceptions for online programs
+		if ( $is_online ) {
+			if ( $program_type === 'Bachelor' ) {
+				return 'UOU';
+			}
+			if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+				return 'UOG';
+			}
 		}
 
-		// Everything else is a graduate degree
-		return 'Grad';
+		// Handle supported undergraduate programs
+		if ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
+			return 'UnderGrad';
+		}
+
+		// Handle supported graduate programs
+		if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+			return 'Grad';
+		}
+
+		// Skip anything else
+		return null;
 	}
 }
