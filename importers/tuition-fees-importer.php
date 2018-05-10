@@ -236,7 +236,7 @@ Success %  : {$success_percentage}%
 			$program_type = ( is_array( $program_type ) && ! empty( $program_type ) ) ? $program_type[0] : null;
 			$plan_code    = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_plan_code_name' ), true );
 			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
-			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_is_online_name' ), true ), FILTER_VALIDATE_BOOLEAN );
+			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_online_meta_field' ), true ), FILTER_VALIDATE_BOOLEAN );
 
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
