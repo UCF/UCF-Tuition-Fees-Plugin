@@ -1,10 +1,10 @@
 # UCF Tuition and Fees Plugin #
 
-Provides a shortcode for displaying tuition and fees
+Provides an import script for importing tuition data for degrees, as well as a shortcode for displaying tuition and fees data.
 
 ## Description ##
 
-Provides a shortcode and related feed code for pulling UCF tuition and fees.
+Provides an import script for importing tuition data for degrees, as well as a shortcode for displaying tuition and fees data.
 
 
 ## Installation ##
@@ -20,6 +20,11 @@ Provides a shortcode and related feed code for pulling UCF tuition and fees.
 
 
 ## Changelog ##
+
+### 2.1.0 ###
+Enhancements:
+- Updated tuition data import script for compatibility with the new UCF Search Service and Degree CPT Plugin updates
+- Updated import script to account for unique online program schedule codes
 
 ### 2.0.2 ###
 Enhancements:
@@ -44,7 +49,8 @@ Bugfixes:
 
 ## Upgrade Notice ##
 
-n/a
+### 2.1.0 ###
+Note that the import script command options have changed in v2.1.0--notably, the URL of the tuition and fees feed must now be explicitly included in the `api` parameter if you wish to provide a custom override; e.g. `$ wp tuition import --api="https://finacctg.fa.ucf.edu/sas/feed/feed.cfm"`.  The base feed url set in plugin options will be used as the default if one isn't provided in the command.
 
 
 ## Installation Requirements ##
