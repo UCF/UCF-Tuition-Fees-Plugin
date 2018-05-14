@@ -7,10 +7,13 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
         public static
             $option_prefix   = 'ucf_tuition_fees_',
             $option_defaults = array(
-                'base_feed_url'        => 'http://www.studentaccounts.ucf.edu/feed/feed.cfm',
-				'include_css'          => false,
-				'cache_results'        => false,
-				'transient_expiration' => 3 // hours
+				'base_feed_url'            => 'https://finacctg.fa.ucf.edu/sas/feed/feed.cfm',
+				'degree_plan_code_name'    => 'degree_plan_code',
+				'degree_subplan_code_name' => 'degree_subplan_code',
+				'include_css'              => false,
+				'cache_results'            => false,
+				'transient_expiration'     => 3, // hours
+				'degree_online_meta_field' => 'degree_online'
             );
 
         /**
@@ -23,7 +26,10 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
         public static function add_options() {
             $defaults = self::$option_defaults;
 
-            add_option( self::$option_prefix . 'base_feed_url', $defaults['base_feed_url'] );
+			add_option( self::$option_prefix . 'base_feed_url', $defaults['base_feed_url'] );
+			add_option( self::$option_prefix . 'degree_plan_code_name', $defaults['degree_plan_code_name'] );
+			add_option( self::$option_prefix . 'degree_subplan_code_name', $defaults['degree_subplan_code_name'] );
+			add_option( self::$option_prefix . 'degree_online_meta_field', $defaults['degree_online_meta_field'] );
 			add_option( self::$option_prefix . 'include_css', $defaults['include_css'] );
 			add_option( self::$option_prefix . 'cache_results', $defaults['cache_results'] );
 			add_option( self::$option_prefix . 'transient_expiration', $defaults['transient_expiration'] );
@@ -37,6 +43,9 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		 **/
 		public static function delete_options() {
 			delete_option( self::$option_prefix . 'base_feed_url' );
+			delete_option( self::$option_prefix . 'degree_plan_code_name' );
+			delete_option( self::$option_prefix . 'degree_subplan_code_name' );
+			delete_option( self::$option_prefix . 'degree_online_meta_field' );
 			delete_option( self::$option_prefix . 'include_css' );
 			delete_option( self::$option_prefix . 'cache_results' );
 			delete_option( self::$option_prefix . 'transient_expiration' );
@@ -54,10 +63,13 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		public static function get_option_defaults() {
 			$defaults = self::$option_defaults;
 			$configurable_defaults = array(
-				'base_feed_url'          => get_option( self::$option_prefix . 'base_feed_url' ),
-				'include_css'            => get_option( self::$option_prefix . 'include_css' ),
-				'cache_results'          => get_option( self::$option_prefix . 'cache_results' ),
-				'transient_expiration'   => get_option( self::$option_prefix . 'transient_expiration' )
+				'base_feed_url'            => get_option( self::$option_prefix . 'base_feed_url' ),
+				'degree_plan_code_name'    => get_option( self::$option_prefix . 'degree_plan_code_name' ),
+				'degree_subplan_code_name' => get_option( self::$option_prefix . 'degree_subplan_code_name' ),
+				'degree_online_meta_field' => get_option( self::$option_prefix . 'degree_online_meta_field' ),
+				'include_css'              => get_option( self::$option_prefix . 'include_css' ),
+				'cache_results'            => get_option( self::$option_prefix . 'cache_results' ),
+				'transient_expiration'     => get_option( self::$option_prefix . 'transient_expiration' )
 			);
 			$configurable_defaults = self::format_options( $configurable_defaults );
 			$default = array_merge( $defaults, $configurable_defaults );
@@ -121,7 +133,7 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		 * or a plugin option default.
 		 * @author Jo Dickson
 		 * @since 1.0.0
-		 * 
+		 *
 		 * @param $option_name
 		 * @return mixed
 		 **/
@@ -144,6 +156,9 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 		 **/
 		public static function settings_init() {
 			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'base_feed_url' );
+			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'degree_plan_code_name' );
+			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'degree_subplan_code_name' );
+			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'degree_online_meta_field' );
 			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'include_css' );
 			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'cache_results' );
 			register_setting( 'ucf_tuition_fees', self::$option_prefix . 'transient_expiration' );
@@ -157,13 +172,52 @@ if ( ! class_exists( 'UCF_Tuition_Fees_Config' ) ) {
 
 			add_settings_field(
 				self::$option_prefix . 'base_feed_url',
-				'Enabled Post Types',
+				'Base Tuition and Fees Feed URL',
 				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
 				'ucf_tuition_fees',
 				'ucf_tuition_fees_general',
 				array(
 					'label_for'   => self::$option_prefix . 'base_feed_url',
 					'description' => 'The base url of the tuition and fees feed.',
+					'type'        => 'text'
+				)
+			);
+
+			add_settings_field(
+				self::$option_prefix . 'degree_plan_code_name',
+				'Degree Plan Code meta name',
+				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
+				'ucf_tuition_fees',
+				'ucf_tuition_fees_general',
+				array(
+					'label_for'   => self::$option_prefix . 'degree_plan_code_name',
+					'description' => 'The name of the meta field that stores individual degree plan codes.',
+					'type'        => 'text'
+				)
+			);
+
+			add_settings_field(
+				self::$option_prefix . 'degree_subplan_code_name',
+				'Degree Subplan Code meta name',
+				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
+				'ucf_tuition_fees',
+				'ucf_tuition_fees_general',
+				array(
+					'label_for'   => self::$option_prefix . 'degree_subplan_code_name',
+					'description' => 'The name of the meta field that stores individual degree subplan codes.',
+					'type'        => 'text'
+				)
+			);
+
+			add_settings_field(
+				self::$option_prefix . 'degree_online_meta_field',
+				'Degree Online meta name',
+				array( 'UCF_Tuition_Fees_Config', 'display_settings_field' ),
+				'ucf_tuition_fees',
+				'ucf_tuition_fees_general',
+				array(
+					'label_for'   => self::$option_prefix . 'degree_online_meta_field',
+					'description' => 'The name of the meta field that determines if a degree is an online degree.',
 					'type'        => 'text'
 				)
 			);

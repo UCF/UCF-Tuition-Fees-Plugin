@@ -13,24 +13,21 @@ class Tuition_Fees_Data_Importer {
 		$skipped_total = 0,
 		$degree_count = 0,
 		$mapping = array(
-			"Doctor of Physical Therapy"                         => "DPT",
-			"Doctor of Medicine"                                 => "MD",
-			"Florida Interactive Entertainment Academy"          => "FIEA",
-			"Executive MBA"                                      => "EMBA",
-			"Professional MBA"                                   => "PMBA",
-			"Professional MS in Management/Human Resource Track" => "PMSM",
-			"Professional Master of Science in Real Estate"      => "PMRE",
-			"MS in Health Sci/Online Exec Health Svcs Admin Trk" => "EHSA",
-			"Master of Research Administration"                  => "MRA",
-			"Master of Nonprofit Management/Non-Res Cohort Trk"  => "MNM",
-			"Graduate Cert in Research Administration"           => "GCRA",
-			"MS in Healthcare Informatics"                       => "MHI",
-			"Graduate Cert in Health Information Administration" => "GCIA",
-			"Online Master of Social Work"                       => "OMSW",
-			"MS in Industrial Engr/Healthcare Systems Engr Trk"  => "MHSE",
-			"Professional MS in Engineering Management"          => "MSEM",
-			"Professional MS in Management/Business Analytics"   => "MSAN",
-			"Master of Science in Data Analytics"                => "MSDA"
+			'DPT'  => array( 'plan_code' => 'PT-DPT', 'subplan_code' => '' ),
+			'MD'   => array( 'plan_code' => 'MEDICIN-MD', 'subplan_code' => '' ),
+			'FIEA' => array( 'plan_code' => 'DIGMED-MS', 'subplan_code' => '' ),
+			'EMBA' => array( 'plan_code' => 'BUS-MBA', 'subplan_code' => 'EXEC-MBA' ),
+			'PMBA' => array( 'plan_code' => 'BUS-MBA', 'subplan_code' => 'PROF-MBA' ),
+			'PMSM' => array( 'plan_code' => 'BUS-MS', 'subplan_code' => 'BUSHR-MS' ),
+			'PMRE' => array( 'plan_code' => 'RLESTAT-MS', 'subplan_code' => '' ),
+			'EHSA' => array( 'plan_code' => 'HLTHSCI-MS', 'subplan_code' => 'ZMRHLEXECH' ),
+			'MRA'  => array( 'plan_code' => 'RCHADM-MRA', 'subplan_code' => '' ),
+			'MNM'  => array( 'plan_code' => 'NONPRFTMNM', 'subplan_code' => 'MNM-COHORT' ),
+			'GCRA' => array( 'plan_code' => 'RCHADM-CRT', 'subplan_code' => '' ),
+			'GCIA' => array( 'plan_code' => 'HCIADMCRT', 'subplan_code' => '' ),
+			'MSEM' => array( 'plan_code' => 'ENGRMGT-MS', 'subplan_code' => '' ),
+			'MSAN' => array( 'plan_code' => 'BUS-MS', 'subplan_code' => 'BUSAN-MS' ),
+			'MSD'  => array( 'plan_code' => 'DATAANAMS', 'subplan_code' => '' ),
 		);
 
 	/**
@@ -70,7 +67,7 @@ class Tuition_Fees_Data_Importer {
 		$success_percentage = round( $this->updated_total / $this->degree_count * 100 );
 		return
 "
-Successfully update tuition data.
+Successfully updated tuition data.
 Updated    : {$this->updated_total}
 Exceptions : {$this->mapped_total}
 Skipped    : {$this->skipped_total}
@@ -233,48 +230,72 @@ Success %  : {$success_percentage}%
 	 */
 	private function update_degrees() {
 		foreach( $this->degrees as $degree ) {
-			$program_types = wp_get_post_terms( $degree->ID, 'program_types' );
-			$program_type = is_array( $program_types ) ? $program_types[0] : false;
+			$parent_program_type    = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => 0 ) );
+			$parent_program_type_id = is_array( $parent_program_type ) ? $parent_program_type[0]->term_id : 0;
+			$program_type = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => $parent_program_type_id ) );
+			$program_type = ( is_array( $program_type ) && ! empty( $program_type ) ) ? $program_type[0] : null;
+			$plan_code    = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_plan_code_name' ), true );
+			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
+			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_online_meta_field' ), true ), FILTER_VALIDATE_BOOLEAN );
 
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
 
-			$schedule_code = $this->get_schedule_code( $program_type->name, $degree->post_title );
+			$schedule_code = $this->get_schedule_code( $program_type->name, $plan_code, $subplan_code, $is_online );
 
 			// If we can't determine the program code, skip it
 			if ( ! $schedule_code ) { $this->skipped_total++; continue; }
 
-			$resident_total = $this->data[$schedule_code]['res'];
-			$non_resident_total = $this->data[$schedule_code]['nonres'];
+			if ( isset( $this->data[$schedule_code] ) ) {
+				$resident_total = $this->data[$schedule_code]['res'];
+				$non_resident_total = $this->data[$schedule_code]['nonres'];
 
-			update_post_meta( $degree->ID, 'degree_resident_tuition', $resident_total );
-			update_post_meta( $degree->ID, 'degree_nonresident_tuition', $non_resident_total );
+				update_post_meta( $degree->ID, 'degree_resident_tuition', $resident_total );
+				update_post_meta( $degree->ID, 'degree_nonresident_tuition', $non_resident_total );
 
-			$this->updated_total++;
+				$this->updated_total++;
+			}
+			else {
+				$this->skipped_total++;
+				continue;
+			}
 		}
 	}
 
-	private function get_schedule_code( $program_type, $name ) {
-		if ( in_array( $program_type, array( 'Undergraduate Degree', 'Minor' ) ) ) {
-			return 'UnderGrad';
-		}
-
+	private function get_schedule_code( $program_type, $plan_code, $subplan_code, $is_online ) {
 		// Loop through the mapping variable and look for a match
-		// This should handle exceptions for masters degrees
-		foreach( $this->mapping as $key => $val ) {
-			if ( stripos( $name, $key ) !== false ||
-				 stripos( $name, $val ) ) {
+		// This should handle unique exceptions for graduate programs
+		foreach ( $this->mapping as $sched_code => $plan_codes ) {
+			if (
+				$plan_codes['plan_code'] === $plan_code
+				&& $plan_codes['subplan_code'] === $subplan_code
+			) {
 				$this->mapped_count++;
-				return $val;
+				return $sched_code;
 			}
 		}
 
-		// If we don't have a mapping for it, skip it.
-		if ( in_array( $program_type, array( 'Accelerated Program', 'Articulated Program', 'Certificate' ) ) ) {
-			return null;
+		// Handle exceptions for online programs
+		if ( $is_online ) {
+			if ( $program_type === 'Bachelor' ) {
+				return 'UOU';
+			}
+			if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+				return 'UOG';
+			}
 		}
 
-		// Everything else is a graduate degree
-		return 'Grad';
+		// Handle supported undergraduate programs
+		if ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
+			return 'UnderGrad';
+		}
+
+		// Handle supported graduate programs
+		if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+			return 'Grad';
+		}
+
+		// Skip anything else
+		return null;
 	}
 }
