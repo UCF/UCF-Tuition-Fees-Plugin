@@ -233,7 +233,16 @@ Success %  : {$success_percentage}%
 			$parent_program_type    = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => 0 ) );
 			$parent_program_type_id = is_array( $parent_program_type ) ? $parent_program_type[0]->term_id : 0;
 			$program_type = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => $parent_program_type_id ) );
-			$program_type = ( is_array( $program_type ) && ! empty( $program_type ) ) ? $program_type[0] : null;
+			if ( is_array( $program_type ) && ! empty( $program_type ) ) {
+				$program_type = $program_type[0];
+			}
+			elseif ( $parent_program_type_id > 0 ) {
+				$program_type = $parent_program_type[0];
+			}
+			else {
+				$program_type = null;
+			}
+
 			$plan_code    = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_plan_code_name' ), true );
 			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
 			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_online_meta_field' ), true ), FILTER_VALIDATE_BOOLEAN );
@@ -241,7 +250,7 @@ Success %  : {$success_percentage}%
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
 
-			$schedule_code = $this->get_schedule_code( $program_type->name, $plan_code, $subplan_code, $is_online );
+			$schedule_code = $this->get_schedule_code( $degree, $program_type->name, $plan_code, $subplan_code, $is_online );
 
 			// If we can't determine the program code, skip it
 			if ( ! $schedule_code ) { $this->skipped_total++; continue; }
@@ -262,7 +271,10 @@ Success %  : {$success_percentage}%
 		}
 	}
 
-	private function get_schedule_code( $program_type, $plan_code, $subplan_code, $is_online ) {
+	private function get_schedule_code( $degree, $program_type, $plan_code, $subplan_code, $is_online ) {
+		$schedule_code = null;
+		$mapped_found  = false;
+
 		// Loop through the mapping variable and look for a match
 		// This should handle unique exceptions for graduate programs
 		foreach ( $this->mapping as $sched_code => $plan_codes ) {
@@ -270,32 +282,37 @@ Success %  : {$success_percentage}%
 				$plan_codes['plan_code'] === $plan_code
 				&& $plan_codes['subplan_code'] === $subplan_code
 			) {
-				$this->mapped_count++;
-				return $sched_code;
+				$this->mapped_total++;
+				$mapped_found = true;
+				$schedule_code = $sched_code;
+				break;
 			}
 		}
 
-		// Handle exceptions for online programs
-		if ( $is_online ) {
-			if ( $program_type === 'Bachelor' ) {
-				return 'UOU';
+		if ( ! $schedule_code ) {
+			// Handle exceptions for online programs
+			if ( $is_online ) {
+				if ( $program_type === 'Bachelor' ) {
+					$schedule_code = 'UOU';
+				}
+				elseif ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+					$schedule_code = 'UOG';
+				}
 			}
-			if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
-				return 'UOG';
+			// Handle supported undergraduate programs
+			elseif ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
+				$schedule_code = 'UnderGrad';
+			}
+			// Handle supported graduate programs
+			elseif ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+				$schedule_code = 'Grad';
 			}
 		}
 
-		// Handle supported undergraduate programs
-		if ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
-			return 'UnderGrad';
+		if ( has_filter( 'ucf_tuition_fees_get_schedule_code' ) ) {
+			$schedule_code = apply_filters( 'ucf_tuition_fees_get_schedule_code', $schedule_code, $degree, $program_type, $plan_code, $subplan_code, $is_online, $mapped_found );
 		}
 
-		// Handle supported graduate programs
-		if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
-			return 'Grad';
-		}
-
-		// Skip anything else
-		return null;
+		return $schedule_code;
 	}
 }
