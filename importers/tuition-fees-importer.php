@@ -297,12 +297,14 @@ Success %  : {$success_percentage}%
 		$schedule_code = null;
 		$mapped_found  = false;
 
+		var_dump( $plan_code );
+
 		// Loop through the mapping variable and look for a match
 		// This should handle unique exceptions for graduate programs
 		foreach ( $this->mappings as $mapping ) {
 			if (
 				$mapping->plan_code === $plan_code
-				&& $mapping->subplan_cpde === $subplan_code
+				&& $mapping->subplan_code === $subplan_code
 			) {
 				$this->mapped_total++;
 				$mapped_found = true;
