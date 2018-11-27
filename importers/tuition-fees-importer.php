@@ -12,23 +12,7 @@ class Tuition_Fees_Data_Importer {
 		$updated_total = 0,
 		$skipped_total = 0,
 		$degree_count = 0,
-		$mapping = array(
-			'DPT'  => array( 'plan_code' => 'PT-DPT', 'subplan_code' => '' ),
-			'MD'   => array( 'plan_code' => 'MEDICIN-MD', 'subplan_code' => '' ),
-			'FIEA' => array( 'plan_code' => 'DIGMED-MS', 'subplan_code' => '' ),
-			'EMBA' => array( 'plan_code' => 'BUS-MBA', 'subplan_code' => 'EXEC-MBA' ),
-			'PMBA' => array( 'plan_code' => 'BUS-MBA', 'subplan_code' => 'PROF-MBA' ),
-			'PMSM' => array( 'plan_code' => 'BUS-MS', 'subplan_code' => 'BUSHR-MS' ),
-			'PMRE' => array( 'plan_code' => 'RLESTAT-MS', 'subplan_code' => '' ),
-			'EHSA' => array( 'plan_code' => 'HLTHSCI-MS', 'subplan_code' => 'ZMRHLEXECH' ),
-			'MRA'  => array( 'plan_code' => 'RCHADM-MRA', 'subplan_code' => '' ),
-			'MNM'  => array( 'plan_code' => 'NONPRFTMNM', 'subplan_code' => 'MNM-COHORT' ),
-			'GCRA' => array( 'plan_code' => 'RCHADM-CRT', 'subplan_code' => '' ),
-			'GCIA' => array( 'plan_code' => 'HCIADMCRT', 'subplan_code' => '' ),
-			'MSEM' => array( 'plan_code' => 'ENGRMGT-MS', 'subplan_code' => '' ),
-			'MSAN' => array( 'plan_code' => 'BUS-MS', 'subplan_code' => 'BUSAN-MS' ),
-			'MSD'  => array( 'plan_code' => 'DATAANAMS', 'subplan_code' => '' ),
-		);
+		$mappings = array();
 
 	/**
 	 * Constructor
@@ -38,11 +22,49 @@ class Tuition_Fees_Data_Importer {
 	 * @param string $post_type The post type of posts to assign tuition and fee data to
 	 * @return Tuition_Fees_Data_Importer
 	 */
-	public function __construct( $api, $post_type='degree' ) {
+	public function __construct( $api, $post_type='degree', $mappings=null ) {
 		$this->api = $api;
 		$this->post_type = $post_type;
 		$this->data = array();
+		$this->mappings = $this->parse_mappings( $mappings );
 		$this->degrees = array();
+	}
+
+	/**
+	 * Parses the mappings file and sets the values to the mappings array
+	 * @author Jim Barnes
+	 * @param string $mappings The path to the mappings file
+	 * @return array The mappings array
+	 */
+	private function parse_mappings( $mappings ) {
+		// Return empty array if there's no file
+		if ( $mappings === null ) return array();
+
+		$mapping_file = null;
+
+		if (
+			substr( $mappings, 0, 4 ) === 'http' ||
+			substr( $mappings, 0, 5 ) === 'https'
+		) {
+			$args = array(
+				'timeout' => 15
+			);
+
+			$response = wp_get_remote( $mappings, $args );
+			$mapping_file = wp_remote_retrieve_body( $response );
+		} else {
+			$mapping_file = file_get_contents( $mappings );
+		}
+
+		if ( ! $mapping_file ) {
+			throw new Exception(
+				"The file provided could not be opened."
+			);
+		}
+
+		$mappings = json_decode( $mapping_file );
+
+		return $mappings;
 	}
 
 	/**
@@ -277,14 +299,14 @@ Success %  : {$success_percentage}%
 
 		// Loop through the mapping variable and look for a match
 		// This should handle unique exceptions for graduate programs
-		foreach ( $this->mapping as $sched_code => $plan_codes ) {
+		foreach ( $this->mappings as $mapping ) {
 			if (
-				$plan_codes['plan_code'] === $plan_code
-				&& $plan_codes['subplan_code'] === $subplan_code
+				$mapping->plan_code === $plan_code
+				&& $mapping->subplan_cpde === $subplan_code
 			) {
 				$this->mapped_total++;
 				$mapped_found = true;
-				$schedule_code = $sched_code;
+				$schedule_code = $mapping->code;
 				break;
 			}
 		}
