@@ -269,8 +269,6 @@ Success %  : {$success_percentage}%
 			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
 			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_online_meta_field' ), true ), FILTER_VALIDATE_BOOLEAN );
 
-			var_dump( $plan_code );
-
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
 
@@ -298,8 +296,6 @@ Success %  : {$success_percentage}%
 	private function get_schedule_code( $degree, $program_type, $plan_code, $subplan_code, $is_online ) {
 		$schedule_code = null;
 		$mapped_found  = false;
-
-		var_dump( $plan_code );
 
 		// Loop through the mapping variable and look for a match
 		// This should handle unique exceptions for graduate programs
