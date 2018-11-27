@@ -50,7 +50,7 @@ class Tuition_Fees_Data_Importer {
 				'timeout' => 15
 			);
 
-			$response = wp_get_remote( $mappings, $args );
+			$response = wp_remote_get( $mappings, $args );
 			$mapping_file = wp_remote_retrieve_body( $response );
 		} else {
 			$mapping_file = file_get_contents( $mappings );
@@ -268,6 +268,8 @@ Success %  : {$success_percentage}%
 			$plan_code    = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_plan_code_name' ), true );
 			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
 			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_online_meta_field' ), true ), FILTER_VALIDATE_BOOLEAN );
+
+			var_dump( $plan_code );
 
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
