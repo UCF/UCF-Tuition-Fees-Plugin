@@ -14,6 +14,9 @@ class Tuition_Command extends WP_CLI_Command {
 	 * [--post-type=<post_type>]
 	 * : The post type to import data into. Defaults to `degree`
 	 *
+	 * [--mappings]
+	 * : The file with special tuition schedule mappings.
+	 *
 	 * ## EXAMPLES
 	 *
 	 * $ wp tuition import
@@ -23,8 +26,9 @@ class Tuition_Command extends WP_CLI_Command {
 	public function import( $args, $assoc_args ) {
 		$api = isset( $assoc_args['api'] ) ? $assoc_args['api'] : UCF_Tuition_Fees_Config::get_option_or_default( 'base_feed_url' );
 		$post_type = isset( $assoc_args['post-type'] ) ? $assoc_args['post-type'] : 'degree';
+		$mappings = isset( $assoc_args['mappings'] ) ? $assoc_args['mappings'] : null;
 
-		$import = new Tuition_Fees_Data_Importer( $api, $post_type );
+		$import = new Tuition_Fees_Data_Importer( $api, $post_type, $mappings );
 
 		try {
 			$import->import();
