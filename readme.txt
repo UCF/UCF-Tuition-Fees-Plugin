@@ -3,7 +3,7 @@ Contributors: ucfwebcom
 Tags: ucf, tuition
 Requires at least: 4.7.5
 Tested up to: 4.7.5
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv3 or later
 License URI: http://www.gnu.org/copyleft/gpl-3.0.html
 
@@ -27,6 +27,10 @@ Provides an import script for importing tuition data for degrees, as well as a s
 
 
 == Changelog ==
+
+= 2.1.1 =
+Enhancements:
+- Updated the tuition import script to utilize a mappings JSON file for tuition code overrides instead of a hard-coded list.
 
 = 2.1.0 =
 Enhancements:
