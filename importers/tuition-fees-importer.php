@@ -12,23 +12,7 @@ class Tuition_Fees_Data_Importer {
 		$updated_total = 0,
 		$skipped_total = 0,
 		$degree_count = 0,
-		$mapping = array(
-			'DPT'  => array( 'plan_code' => 'PT-DPT', 'subplan_code' => '' ),
-			'MD'   => array( 'plan_code' => 'MEDICIN-MD', 'subplan_code' => '' ),
-			'FIEA' => array( 'plan_code' => 'DIGMED-MS', 'subplan_code' => '' ),
-			'EMBA' => array( 'plan_code' => 'BUS-MBA', 'subplan_code' => 'EXEC-MBA' ),
-			'PMBA' => array( 'plan_code' => 'BUS-MBA', 'subplan_code' => 'PROF-MBA' ),
-			'PMSM' => array( 'plan_code' => 'BUS-MS', 'subplan_code' => 'BUSHR-MS' ),
-			'PMRE' => array( 'plan_code' => 'RLESTAT-MS', 'subplan_code' => '' ),
-			'EHSA' => array( 'plan_code' => 'HLTHSCI-MS', 'subplan_code' => 'ZMRHLEXECH' ),
-			'MRA'  => array( 'plan_code' => 'RCHADM-MRA', 'subplan_code' => '' ),
-			'MNM'  => array( 'plan_code' => 'NONPRFTMNM', 'subplan_code' => 'MNM-COHORT' ),
-			'GCRA' => array( 'plan_code' => 'RCHADM-CRT', 'subplan_code' => '' ),
-			'GCIA' => array( 'plan_code' => 'HCIADMCRT', 'subplan_code' => '' ),
-			'MSEM' => array( 'plan_code' => 'ENGRMGT-MS', 'subplan_code' => '' ),
-			'MSAN' => array( 'plan_code' => 'BUS-MS', 'subplan_code' => 'BUSAN-MS' ),
-			'MSD'  => array( 'plan_code' => 'DATAANAMS', 'subplan_code' => '' ),
-		);
+		$mappings = array();
 
 	/**
 	 * Constructor
@@ -38,11 +22,49 @@ class Tuition_Fees_Data_Importer {
 	 * @param string $post_type The post type of posts to assign tuition and fee data to
 	 * @return Tuition_Fees_Data_Importer
 	 */
-	public function __construct( $api, $post_type='degree' ) {
+	public function __construct( $api, $post_type='degree', $mappings=null ) {
 		$this->api = $api;
 		$this->post_type = $post_type;
 		$this->data = array();
+		$this->mappings = $this->parse_mappings( $mappings );
 		$this->degrees = array();
+	}
+
+	/**
+	 * Parses the mappings file and sets the values to the mappings array
+	 * @author Jim Barnes
+	 * @param string $mappings The path to the mappings file
+	 * @return array The mappings array
+	 */
+	private function parse_mappings( $mappings ) {
+		// Return empty array if there's no file
+		if ( $mappings === null ) return array();
+
+		$mapping_file = null;
+
+		if (
+			substr( $mappings, 0, 4 ) === 'http' ||
+			substr( $mappings, 0, 5 ) === 'https'
+		) {
+			$args = array(
+				'timeout' => 15
+			);
+
+			$response = wp_remote_get( $mappings, $args );
+			$mapping_file = wp_remote_retrieve_body( $response );
+		} else {
+			$mapping_file = file_get_contents( $mappings );
+		}
+
+		if ( ! $mapping_file ) {
+			throw new Exception(
+				"The file provided could not be opened."
+			);
+		}
+
+		$mappings = json_decode( $mapping_file );
+
+		return $mappings;
 	}
 
 	/**
@@ -233,7 +255,16 @@ Success %  : {$success_percentage}%
 			$parent_program_type    = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => 0 ) );
 			$parent_program_type_id = is_array( $parent_program_type ) ? $parent_program_type[0]->term_id : 0;
 			$program_type = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => $parent_program_type_id ) );
-			$program_type = ( is_array( $program_type ) && ! empty( $program_type ) ) ? $program_type[0] : null;
+			if ( is_array( $program_type ) && ! empty( $program_type ) ) {
+				$program_type = $program_type[0];
+			}
+			elseif ( $parent_program_type_id > 0 ) {
+				$program_type = $parent_program_type[0];
+			}
+			else {
+				$program_type = null;
+			}
+
 			$plan_code    = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_plan_code_name' ), true );
 			$subplan_code = get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_subplan_code_name' ), true );
 			$is_online    = filter_var( get_post_meta( $degree->ID, UCF_Tuition_Fees_Config::get_option_or_default( 'degree_online_meta_field' ), true ), FILTER_VALIDATE_BOOLEAN );
@@ -241,7 +272,7 @@ Success %  : {$success_percentage}%
 			// If no program type, skip it
 			if ( ! $program_type ) { $this->skipped_total++; continue; }
 
-			$schedule_code = $this->get_schedule_code( $program_type->name, $plan_code, $subplan_code, $is_online );
+			$schedule_code = $this->get_schedule_code( $degree, $program_type->name, $plan_code, $subplan_code, $is_online );
 
 			// If we can't determine the program code, skip it
 			if ( ! $schedule_code ) { $this->skipped_total++; continue; }
@@ -262,40 +293,48 @@ Success %  : {$success_percentage}%
 		}
 	}
 
-	private function get_schedule_code( $program_type, $plan_code, $subplan_code, $is_online ) {
+	private function get_schedule_code( $degree, $program_type, $plan_code, $subplan_code, $is_online ) {
+		$schedule_code = null;
+		$mapped_found  = false;
+
 		// Loop through the mapping variable and look for a match
 		// This should handle unique exceptions for graduate programs
-		foreach ( $this->mapping as $sched_code => $plan_codes ) {
+		foreach ( $this->mappings as $mapping ) {
 			if (
-				$plan_codes['plan_code'] === $plan_code
-				&& $plan_codes['subplan_code'] === $subplan_code
+				$mapping->plan_code === $plan_code
+				&& $mapping->subplan_code === $subplan_code
 			) {
-				$this->mapped_count++;
-				return $sched_code;
+				$this->mapped_total++;
+				$mapped_found = true;
+				$schedule_code = $mapping->code;
+				break;
 			}
 		}
 
-		// Handle exceptions for online programs
-		if ( $is_online ) {
-			if ( $program_type === 'Bachelor' ) {
-				return 'UOU';
+		if ( ! $schedule_code ) {
+			// Handle exceptions for online programs
+			if ( $is_online ) {
+				if ( $program_type === 'Bachelor' ) {
+					$schedule_code = 'UOU';
+				}
+				elseif ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+					$schedule_code = 'UOG';
+				}
 			}
-			if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
-				return 'UOG';
+			// Handle supported undergraduate programs
+			elseif ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
+				$schedule_code = 'UnderGrad';
+			}
+			// Handle supported graduate programs
+			elseif ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
+				$schedule_code = 'Grad';
 			}
 		}
 
-		// Handle supported undergraduate programs
-		if ( in_array( $program_type, array( 'Bachelor', 'Minor' ) ) ) {
-			return 'UnderGrad';
+		if ( has_filter( 'ucf_tuition_fees_get_schedule_code' ) ) {
+			$schedule_code = apply_filters( 'ucf_tuition_fees_get_schedule_code', $schedule_code, $degree, $program_type, $plan_code, $subplan_code, $is_online, $mapped_found );
 		}
 
-		// Handle supported graduate programs
-		if ( in_array( $program_type, array( 'Master', 'Doctorate' ) ) ) {
-			return 'Grad';
-		}
-
-		// Skip anything else
-		return null;
+		return $schedule_code;
 	}
 }
