@@ -206,10 +206,7 @@ Success %  : {$success_percentage}%
 
 			foreach( $fees as $fee ) {
 				//Make sure this isn't an "Other" fee
-				if ( stripos( $fee->FeeName, '(Per Hour)' ) === false &&
-					 stripos( $fee->FeeName, '(Per Term)' ) === false &&
-					 stripos( $fee->FeeName, '(Annual)' ) === false )
-				{
+				if ( $this->is_required_fee( $fee ) ) {
 					$resident_total += $fee->MaxResidentFee;
 					$non_resident_total += $fee->MaxNonResidentFee;
 				}
