@@ -206,10 +206,7 @@ Success %  : {$success_percentage}%
 
 			foreach( $fees as $fee ) {
 				//Make sure this isn't an "Other" fee
-				if ( stripos( $fee->FeeName, '(Per Hour)' ) === false &&
-					 stripos( $fee->FeeName, '(Per Term)' ) === false &&
-					 stripos( $fee->FeeName, '(Annual)' ) === false )
-				{
+				if ( $this->is_required_fee( $fee ) ) {
 					$resident_total += $fee->MaxResidentFee;
 					$non_resident_total += $fee->MaxNonResidentFee;
 				}
@@ -234,6 +231,29 @@ Success %  : {$success_percentage}%
 		}
 	}
 
+	/**
+	 * Determines if the fee should be added to the total
+	 * @author Jim Barnes
+	 * @since 2.1.2
+	 * @param object $fee The fee object to compare
+	 * @return bool True if the fee should be included
+	 */
+	private function is_required_fee( $fee ) {
+		$retval = ( stripos( $fee->FeeName, '(Per Hour)' ) === false &&
+					stripos( $fee->FeeName, '(Per Term)' ) === false &&
+					stripos( $fee->FeeName, '(Annual)' ) === false );
+
+		$retval = apply_filters( 'ucf_tuition_fees_is_required', $retval, $fee );
+
+		return $retval;
+	}
+
+	/**
+	 * Returns the currect degrees
+	 * @author Jim Barnes
+	 * @since 2.0.2
+	 * @return array
+	 */
 	private function get_existing_degrees() {
 		$args = array(
 			'post_type'      => $this->post_type,
