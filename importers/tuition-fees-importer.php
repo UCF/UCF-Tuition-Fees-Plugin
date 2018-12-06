@@ -249,7 +249,7 @@ Success %  : {$success_percentage}%
 	}
 
 	/**
-	 * Returns the currect degrees
+	 * Returns the current degrees
 	 * @author Jim Barnes
 	 * @since 2.0.2
 	 * @return array
