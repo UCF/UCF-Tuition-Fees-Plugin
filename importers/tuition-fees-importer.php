@@ -240,8 +240,8 @@ Success %  : {$success_percentage}%
 	 */
 	private function is_required_fee( $fee ) {
 		$retval = ( stripos( $fee->FeeName, '(Per Hour)' ) === false &&
-					stripos( $fee->FeeName, '(Per Term)' ) === false &&
-					stripos( $fee->FeeName, '(Annual)' ) === false );
+			stripos( $fee->FeeName, '(Per Term)' ) === false &&
+			stripos( $fee->FeeName, '(Annual)' ) === false );
 
 		$retval = apply_filters( 'ucf_tuition_fees_is_required', $retval, $fee );
 
