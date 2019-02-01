@@ -272,6 +272,14 @@ Success %  : {$success_percentage}%
 	 */
 	private function update_degrees() {
 		foreach( $this->degrees as $degree ) {
+			$skip = get_post_meta( $degree->ID, 'degree_tuition_skip', true );
+			$skip = ! empty( $skip ) ? filter_var( $skip, FILTER_VALIDATE_BOOL ) : false;
+
+			if ( $skip ) {
+				$this->skipped_total++;
+				continue;
+			}
+
 			$parent_program_type    = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => 0 ) );
 			$parent_program_type_id = is_array( $parent_program_type ) ? $parent_program_type[0]->term_id : 0;
 			$program_type = wp_get_post_terms( $degree->ID, 'program_types', array( 'parent' => $parent_program_type_id ) );
