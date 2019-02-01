@@ -21,6 +21,10 @@ Provides an import script for importing tuition data for degrees, as well as a s
 
 ## Changelog ##
 
+### 2.1.2 ###
+Enhancements:
+* Creates an additional function/filter for determining if a fee should be added to the total imported.
+
 ### 2.1.1 ###
 Enhancements:
 - Updated the tuition import script to utilize a mappings JSON file for tuition code overrides instead of a hard-coded list.
