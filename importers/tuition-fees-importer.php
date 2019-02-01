@@ -273,7 +273,7 @@ Success %  : {$success_percentage}%
 	private function update_degrees() {
 		foreach( $this->degrees as $degree ) {
 			$skip = get_post_meta( $degree->ID, 'degree_tuition_skip', true );
-			$skip = ! empty( $skip ) ? filter_var( $skip, FILTER_VALIDATE_BOOL ) : false;
+			$skip = ! empty( $skip ) ? filter_var( $skip, FILTER_VALIDATE_BOOLEAN ) : false;
 
 			if ( $skip ) {
 				$this->skipped_total++;
