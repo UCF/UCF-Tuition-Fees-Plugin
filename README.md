@@ -21,6 +21,10 @@ Provides an import script for importing tuition data for degrees, as well as a s
 
 ## Changelog ##
 
+### 2.1.3 ###
+Enhancements:
+* Added ability to skip tuition during import
+
 ### 2.1.2 ###
 Enhancements:
 * Creates an additional function/filter for determining if a fee should be added to the total imported.
