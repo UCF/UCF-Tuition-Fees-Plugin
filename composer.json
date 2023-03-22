@@ -1,0 +1,8 @@
+{
+    "name": "ucf/ucf-tuition-fees-plugin",
+    "description": "Provides an import script for importing tuition data for degrees, as well as a shortcode for displaying tuition and fees data.",
+    "type": "wordpress-plugin",
+    "require": {
+        "composer/installers": "~1.0"
+    }
+}
